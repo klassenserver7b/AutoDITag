@@ -1,4 +1,8 @@
 # AutoDITag
+
+A Tool to automatically rename and tag mp3 files
+Meant to be used to create playlist files and corresponding tagged mp3 files, that can be used in [DanceInterpreter](https://github.com/Klassenserver7b/Danceinterpreter)
+
 ## Installation and Usage
 
 Requires Python 3.6+, mutagen and argparse
