@@ -2,6 +2,7 @@ import argparse
 import re
 import os
 import shutil
+import urllib.parse
 from mutagen.id3 import ID3, TIT2, TALB, TRCK, TRK, TPE1, TPE2, TCON, TCOM, COMM
 from mutagen.mp3 import MP3
 
@@ -9,16 +10,19 @@ from mutagen.mp3 import MP3
 def create_playlist_files(args: argparse.Namespace):
     with open('./playlist.m3u', 'w') as playlist_file:
         lines = ['#EXTM3U\n']
-        for af in os.listdir(args.dir):
+        sdir = os.listdir(args.dir)
+        sdir.sort()
+        for af in sdir:
             groups = re.match(r'(\d{2})_(.*);\s(.*)\s--\s(.*)\.mp3', af).groups()
 
             relpath = os.path.join(args.dir, af)
             audio = MP3(relpath)
-            lines.append(f'#EXTINF:{audio.info.length},{groups[2]} - {groups[1]}')
-            lines.append(relpath)
+            lines.append(f"#EXTINF:{str(audio.info.length).split('.')[0]},{groups[2]} - {groups[1]}\n")
+            lines.append(urllib.parse.quote(relpath)+'\n')
 
         playlist_file.writelines(lines)
     shutil.copy('./playlist.m3u', './playlist.m3u8')
+    print('Created playlist files')
 
 
 def tag(args: argparse.Namespace) -> None:
@@ -48,6 +52,7 @@ def apply_tags(f: str, num: str, title: str, artist: str, dance: str, album: str
     tags.add(TALB(encode=3, text=album))
     tags.add(TPE2(encode=3, text=album))
     tags.save()
+    print(f'Tagged {f}')
 
 
 def rename(args: argparse.Namespace) -> None:
