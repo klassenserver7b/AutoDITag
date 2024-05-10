@@ -1,0 +1,10 @@
+language: python
+python:
+  - "3.10"
+  - "3.11"
+  - "3.12"
+  - "nightly"  # nightly build
+  - "pypy3"
+# command to install dependencies
+install:
+  - pip install -e '.'
