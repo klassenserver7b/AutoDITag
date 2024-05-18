@@ -22,6 +22,13 @@ pip install -r requirements.txt
 python3 auto_di_tag.py -f PATH_TO_DESCRIPTOR_FILE -d PATH_TO_MUSICFOLDER -n PLAYLISTNAME
 ```
 
+### How to create descriptorfile
+[see Examples](examples/README.md)
+
+## License
+This Project is Licensed under the [GNU GENERAL PUBLIC LICENSE Version 3](LICENSE).
+Therefore there is NO WARRANTY for anything regarding this code
+
 ## Help Menu
 
 ```
