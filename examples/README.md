@@ -3,7 +3,7 @@ A descriptorfile for AutoDITag is pretty simple.
 
 In every line you have one song structured as
 
-`%TRACKNUM%_%TITLE%; %ARTIST% -- %DANCE%`
+`$TRACKNUM_$TITLE; $ARTIST -- $DANCE`
 [see example](tänze.txt)
 
 ## Usage
