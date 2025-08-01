@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "auto_di_tag_K7"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
   { name="Klassenserver 7b", email="klassenserver7bwin10@gmail.com" },
 ]
