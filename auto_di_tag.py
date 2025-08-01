@@ -8,7 +8,7 @@ from mutagen.mp3 import MP3
 
 
 def create_playlist_files(args: argparse.Namespace):
-    with open('./playlist.m3u', 'w') as playlist_file:
+    with open(f'./{args.name}.m3u', 'w') as playlist_file:
         lines = ['#EXTM3U\n']
         sdir = os.listdir(args.dir)
         sdir.sort()
@@ -21,13 +21,14 @@ def create_playlist_files(args: argparse.Namespace):
             lines.append(urllib.parse.quote(relpath)+'\n')
 
         playlist_file.writelines(lines)
-    shutil.copy('./playlist.m3u', './playlist.m3u8')
+    shutil.copy(f'./{args.name}.m3u', f'./{args.name}.m3u8')
     print('Created playlist files')
 
 
 def tag(args: argparse.Namespace) -> None:
     for f in os.listdir(args.dir):
         matches = re.match(r'(\d{2})_(.*);\s(.*)\s--\s(.*)\.mp3', f)
+        print(f)
         groups = matches.groups()
         apply_tags(os.path.join(args.dir, f), groups[0], groups[1], groups[2], groups[3], args.name)
 
@@ -52,6 +53,7 @@ def apply_tags(f: str, num: str, title: str, artist: str, dance: str, album: str
     tags.add(TALB(encode=3, text=album))
     tags.add(TPE2(encode=3, text=album))
     tags.save()
+
     print(f'Tagged {f}')
 
 
@@ -62,7 +64,7 @@ def rename(args: argparse.Namespace) -> None:
             if len(scount) == 1:
                 scount = "0" + scount
 
-            filep = [f for f in os.listdir(args.dir) if re.match(fr"{scount}-.*", f)]
+            filep = [f for f in os.listdir(args.dir) if re.match(fr"{scount}[-_].*", f)]
             if filep:
                 filep = os.path.join(args.dir, filep[0])
                 targetp = os.path.join(args.dir, f"{line.strip()}.mp3")

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auto_di_tag_K7"
+version = "0.1.2"
+authors = [
+  { name="Klassenserver 7b", email="klassenserver7bwin10@gmail.com" },
+]
+description = "Automatically create rename and tag your dance playlist"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    'Environment :: Console',
+    'Intended Audience :: End Users/Desktop',
+    'Topic :: Multimedia :: Sound/Audio',
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+dependencies = ["mutagen>=1.45", "argparse>=1.4"]
+
+[project.scripts]
+auto_di_tag = "auto_di_tag:main"
+auto-di-tag = "auto_di_tag:main"
+autoditag = "auto_di_tag:main"
+
+[project.urls]
+Homepage = "https://github.com/klassenserver7b/AutoDITag"
+Issues = "https://github.com/klassenserver7b/AutoDITag/issues"
