@@ -36,7 +36,7 @@ def validate_descriptor_file(file_path: str) -> List[str]:
         raise DescriptorFileError(f"Path is not a file: {file_path}")
 
     try:
-        with open(file_path, "r", encoding="utf-8") as file:
+        with open(file_path, "r", encoding="utf-8-sig") as file:
             lines = file.readlines()
     except PermissionError:
         raise DescriptorFileError(f"Permission denied reading file: {file_path}")
