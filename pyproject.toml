@@ -27,6 +27,14 @@ auto_di_tag = "auto_di_tag:main"
 auto-di-tag = "auto_di_tag:main"
 autoditag = "auto_di_tag:main"
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "flake8"
+]
+
+
 [project.urls]
 Homepage = "https://github.com/klassenserver7b/AutoDITag"
 Issues = "https://github.com/klassenserver7b/AutoDITag/issues"
