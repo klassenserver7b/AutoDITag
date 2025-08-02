@@ -89,7 +89,7 @@ def validate_descriptor_file(file_path: str) -> List[str]:
         match = re.match(pattern, line)
         if not line.startswith(f"{line_num:02d}"):
             expected_prefix = f"{line_num:02d}"
-            actual_prefix = line[:2] if len(line) >= 2 else line
+            actual_prefix = line[:2]
             raise DescriptorFileError(
                 f"Line {line_num}: Track number mismatch. "
                 f"Expected '{expected_prefix}' but found '{actual_prefix}'. "
