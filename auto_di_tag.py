@@ -87,8 +87,8 @@ def validate_descriptor_file(file_path: str) -> List[str]:
 
         # Check if line matches the expected pattern
         match = re.match(pattern, line)
-        if not line.startswith(f"{line_num:02d}_"):
-            expected_prefix = f"{line_num:02d}_"
+        if not line.startswith(f"{line_num:02d}"):
+            expected_prefix = f"{line_num:02d}"
             actual_prefix = line[:3] if len(line) >= 3 else line
             raise DescriptorFileError(
                 f"Line {line_num}: Track number mismatch. "

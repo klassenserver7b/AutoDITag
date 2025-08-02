@@ -206,8 +206,8 @@ class TestValidationFunctions(unittest.TestCase):
         error_msg = str(cm.exception)
         self.assertIn("Line 1", error_msg)
         self.assertIn("Track number mismatch", error_msg)
-        self.assertIn("Expected '01_'", error_msg)
-        self.assertIn("but found '03_'", error_msg)
+        self.assertIn("Expected '01'", error_msg)
+        self.assertIn("but found '03'", error_msg)
 
     @mock.patch("builtins.open", new_callable=mock.mock_open,
                 read_data="01_Song; Artist -- Dance\n02_Another Song, With Comma; Artist -- Style\n")
