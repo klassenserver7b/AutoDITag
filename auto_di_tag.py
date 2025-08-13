@@ -4,6 +4,7 @@ import os
 import shutil
 import urllib.parse
 import sys
+import math
 from typing import Optional, Tuple, List
 from mutagen.id3 import ID3, TIT2, TALB, TRCK, TRK, TPE1, TPE2, TCON, TCOM, COMM
 from mutagen.mp3 import MP3
@@ -49,13 +50,10 @@ def validate_descriptor_file(file_path: str) -> List[str]:
         raise DescriptorFileError(f"Descriptor file is empty: {file_path}")
 
     valid_lines = []
-    pattern = r'(\d{2})_(.*);\s(.*)\s--\s(.*)$'
+    track_num_digits = int(math.ceil(math.log10(len(lines) + 1)))
+    pattern = r'(\d+)_(.*);\s(.*)\s--\s(.*)$'
 
-    for line_num, line in enumerate(lines, 1):
-        line = line.strip()
-        if not line:  # Skip empty lines
-            continue
-
+    for line_num, line in enumerate([line.strip() for line in lines if not line.isspace()], 1):
         # Check for common formatting mistakes
         if ';' not in line:
             if ',' in line:
@@ -87,12 +85,14 @@ def validate_descriptor_file(file_path: str) -> List[str]:
 
         # Check if line matches the expected pattern
         match = re.match(pattern, line)
-        if not line.startswith(f"{line_num:02d}"):
-            expected_prefix = f"{line_num:02d}"
-            actual_prefix = line[:2]
+        match_track_num = re.match(r'\d+', line)
+        match_track_num = int(match_track_num.group(0)) if match_track_num else line[:track_num_digits]
+
+        if match_track_num != line_num:
+            expected_prefix = f"{line_num:0{track_num_digits}d}"
             raise DescriptorFileError(
                 f"Line {line_num}: Track number mismatch. "
-                f"Expected '{expected_prefix}' but found '{actual_prefix}'. "
+                f"Expected '{expected_prefix}' but found '{match_track_num}'. "
                 f"Each line should start with the zero-padded line number.\n"
                 f"Line content: '{line}'"
             )
@@ -134,7 +134,7 @@ def parse_filename(filename: str) -> Optional[Tuple[str, str, str, str]]:
     """
     Parse a filename and return (track_num, title, artist, dance) or None if invalid.
     """
-    pattern = r'(\d{2})_(.*);\s(.*)\s--\s(.*)\.mp3'
+    pattern = r'(\d+)_(.*);\s(.*)\s--\s(.*)\.mp3'
     match = re.match(pattern, filename)
     if match:
         return match.groups()
