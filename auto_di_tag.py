@@ -197,23 +197,18 @@ def create_playlist_files(args: argparse.Namespace):
             raise AudioFileError(f"Error creating playlist files: {e}")
 
 
-def setup_spotipy(args: argparse.Namespace) -> spotipy.Spotify:
-    client_id = None
-    client_secret = None
-
+def get_spotify_credentials(args):
     # 1. Command line (passed as arguments)
     if args.client_id and args.client_secret:
-        client_id = args.client_id
-        client_secret = args.client_secret
-        save_spotify_credentials(client_id, client_secret)
+        save_spotify_credentials(args.client_id, args.client_secret)
+        return args.client_id, args.client_secret
 
     # 2. Environment variables
     env_id = os.getenv('SPOTIFY_CLIENT_ID')
     env_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
     if env_id and env_secret:
-        client_id = env_id
-        client_secret = env_secret
-        save_spotify_credentials(client_id, client_secret)
+        save_spotify_credentials(env_id, env_secret)
+        return env_id, env_secret
 
     # 3. Config file
     if CONFIG_FILE.exists():
@@ -223,13 +218,20 @@ def setup_spotipy(args: argparse.Namespace) -> spotipy.Spotify:
                 file_id = config.get('client_id')
                 file_secret = config.get('client_secret')
                 if file_id and file_secret:
-                    client_id = file_id
-                    client_secret = file_secret
+                    return file_id, file_secret
         except Exception as e:
             print(f"Warning: Could not read Spotify config: {e}")
 
-    return spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=args.client_id,
-                                                                 client_secret=args.client_secret))
+    raise AutoDITagError("Spotify credentials not provided. Please provide them via command line arguments, "
+                         "environment variables, or config file.")
+
+
+def setup_spotipy(args: argparse.Namespace) -> spotipy.Spotify:
+
+    client_id, client_secret = get_spotify_credentials(args)
+
+    return spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=client_id,
+                                                                 client_secret=client_secret))
 
 
 def save_spotify_credentials(client_id: str, client_secret: str) -> bool:
@@ -403,7 +405,7 @@ def rename(args: argparse.Namespace) -> None:
                 print(f"  {missing}")
 
         if renamed_count == 0:
-            raise AudioFileError("No files were successfully renamed")
+            print("Warning: No files were successfully renamed")
 
         print(f"\nSuccessfully renamed {renamed_count} files")
 
