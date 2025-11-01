@@ -42,12 +42,13 @@ class TestAutoDiTag(unittest.TestCase):
         args = mock.Mock()
         args.dir = "/fake/music"
         args.name = "Dance Album"
+        args.spotify_cover = False
 
         tag(args)
 
         mock_apply_tags.assert_called_once_with(
             os.path.join("/fake/music", "01_Title; Artist -- Style.mp3"),
-            "01", "Title", "Artist", "Style", "Dance Album"
+            "01", "Title", "Artist", "Style", "Dance Album", None
         )
 
     @mock.patch("shutil.copy")

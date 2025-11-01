@@ -276,7 +276,9 @@ def tag(args: argparse.Namespace) -> None:
     """Tag MP3 files with enhanced error handling"""
     try:
         validate_music_directory(args.dir)
-        sp = setup_spotipy(args)
+
+        if args.spotify_cover:
+            sp = setup_spotipy(args)
 
         files = [f for f in os.listdir(args.dir) if f.endswith('.mp3')]
         if not files:
