@@ -6,7 +6,7 @@ Meant to be used to create playlist files and corresponding tagged mp3 files, th
 
 ## Installation and Usage
 
-Requires Python 3.6+, mutagen and argparse
+Requires Python 3.6+, mutagen, requests, argparse and spotipy
 
 ### Pip
 ```sh
