@@ -1,2 +1,6 @@
-mutagen
-argparse
+mutagen >= 1.40
+argparse >= 1.0
+spotipy >= 2.25
+typing >= 3.5
+requests >= 2.0
+

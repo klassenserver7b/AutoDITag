@@ -1,13 +1,21 @@
 import argparse
+import json
 import re
 import os
 import shutil
 import urllib.parse
 import sys
 import math
+import requests
+import spotipy
+
+from spotipy.oauth2 import SpotifyClientCredentials
 from typing import Optional, Tuple, List
-from mutagen.id3 import ID3, TIT2, TALB, TRCK, TRK, TPE1, TPE2, TCON, TCOM, COMM
+from pathlib import Path
+from mutagen.id3 import ID3, TIT2, TALB, TRCK, TRK, TPE1, TPE2, TCON, TCOM, COMM, APIC
 from mutagen.mp3 import MP3
+
+CONFIG_FILE = Path.home() / '.config' / 'autoditag' / 'spotify.conf'
 
 
 class AutoDITagError(Exception):
@@ -98,12 +106,12 @@ def validate_descriptor_file(file_path: str) -> List[str]:
             )
         if not match:
             # Provide more specific error messages
-                # Generic format error
-                raise DescriptorFileError(
-                    f"Line {line_num}: Invalid format. "
-                    f"Expected format: TRACKNUM_TITLE; ARTIST -- DANCE\n"
-                    f"Line content: '{line}'"
-                )
+            # Generic format error
+            raise DescriptorFileError(
+                f"Line {line_num}: Invalid format. "
+                f"Expected format: TRACKNUM_TITLE; ARTIST -- DANCE\n"
+                f"Line content: '{line}'"
+            )
 
         valid_lines.append(line)
 
@@ -189,10 +197,86 @@ def create_playlist_files(args: argparse.Namespace):
             raise AudioFileError(f"Error creating playlist files: {e}")
 
 
+def setup_spotipy(args: argparse.Namespace) -> spotipy.Spotify:
+    client_id = None
+    client_secret = None
+
+    # 1. Command line (passed as arguments)
+    if args.client_id and args.client_secret:
+        client_id = args.client_id
+        client_secret = args.client_secret
+        save_spotify_credentials(client_id, client_secret)
+
+    # 2. Environment variables
+    env_id = os.getenv('SPOTIFY_CLIENT_ID')
+    env_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
+    if env_id and env_secret:
+        client_id = env_id
+        client_secret = env_secret
+        save_spotify_credentials(client_id, client_secret)
+
+    # 3. Config file
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+                file_id = config.get('client_id')
+                file_secret = config.get('client_secret')
+                if file_id and file_secret:
+                    client_id = file_id
+                    client_secret = file_secret
+        except Exception as e:
+            print(f"Warning: Could not read Spotify config: {e}")
+
+    return spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=args.client_id,
+                                                                 client_secret=args.client_secret))
+
+
+def save_spotify_credentials(client_id: str, client_secret: str) -> bool:
+    """Save credentials to config file"""
+    try:
+        CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump({
+                'client_id': client_id,
+                'client_secret': client_secret
+            }, f, indent=2)
+        # Make file readable only by user
+        CONFIG_FILE.chmod(0o600)
+        return True
+    except Exception as e:
+        print(f"Error saving Spotify config: {e}")
+        return False
+
+
+def get_spotify_album_cover(sp: spotipy.Spotify, title: str, artist: str) -> tuple[str, bytes] | None:
+    search_result = sp.search(q=f"{title} {artist}", limit=1, type='track')
+    tracks = search_result["tracks"]["items"]
+    if not tracks or len(tracks) == 0:
+        return None
+
+    covers = tracks[0]["album"]["images"]
+    sorted_covers = sorted(covers, key=lambda k: k["height"], reverse=True)
+
+    print(f"Found {len(sorted_covers)} spotify covers for '{title}' by '{artist}'")
+
+    if not sorted_covers or len(sorted_covers) == 0:
+        return None
+
+    cover_url = sorted_covers[0]["url"]
+    cover = requests.get(cover_url)
+
+    if cover.status_code != 200:
+        return None
+
+    return cover.headers['Content-Type'], cover.content
+
+
 def tag(args: argparse.Namespace) -> None:
     """Tag MP3 files with enhanced error handling"""
     try:
         validate_music_directory(args.dir)
+        sp = setup_spotipy(args)
 
         files = [f for f in os.listdir(args.dir) if f.endswith('.mp3')]
         if not files:
@@ -206,8 +290,13 @@ def tag(args: argparse.Namespace) -> None:
                 continue
 
             track_num, title, artist, dance = parsed
+
+            cover = None
+            if args.spotify_cover:
+                cover = get_spotify_album_cover(sp, title, artist)
+
             try:
-                apply_tags(os.path.join(args.dir, f), track_num, title, artist, dance, args.name)
+                apply_tags(os.path.join(args.dir, f), track_num, title, artist, dance, args.name, cover)
                 processed_files += 1
             except Exception as e:
                 print(f"Warning: Could not tag file {f}: {e}")
@@ -225,7 +314,8 @@ def tag(args: argparse.Namespace) -> None:
             raise AudioFileError(f"Error during tagging process: {e}")
 
 
-def apply_tags(f: str, num: str, title: str, artist: str, dance: str, album: str) -> None:
+def apply_tags(f: str, num: str, title: str, artist: str, dance: str, album: str,
+               cover: tuple[str, bytes] | None) -> None:
     """Apply ID3 tags to an MP3 file with error handling"""
     if not os.path.exists(f):
         raise AudioFileError(f"File not found: {f}")
@@ -248,6 +338,9 @@ def apply_tags(f: str, num: str, title: str, artist: str, dance: str, album: str
         tags.add(COMM(encode=3, text=dance))
         tags.add(TALB(encode=3, text=album))
         tags.add(TPE2(encode=3, text=album))
+
+        if cover and cover[0] and cover[1]:
+            tags.add(APIC(encoding=3, mime=cover[0], type=3, desc="Cover", data=cover[1]))
 
         tags.save()
         print(f'Tagged {os.path.basename(f)}')
@@ -325,12 +418,18 @@ def get_args() -> argparse.Namespace:
         description='Automatically rename and tag your dance playlist',
         epilog='see https://github.com/klassenserver7b/AutoDITag'
     )
+    parser.add_argument('-i''--spotify-client-id', dest='client_id', required=False,
+                        default="9bc78c921c8a4f38ae7087ffeace58f5", help='Spotify Client ID')
+    parser.add_argument('-p''--spotify-client-secret', dest='client_secret', required=False, default="",
+                        help='Spotify Client Secret')
     parser.add_argument('-f', '--file', dest='file', required=True, default='./tänze.txt',
                         help='Your txt file containing the playlist')
     parser.add_argument('-d', '--dir', dest='dir', required=True, default='./Tanzmusik',
                         help='The directory of the mp3 files to process')
     parser.add_argument('-n', '--name', dest='name', required=True,
                         help='The name of the Playlist. eg: Schulball 08.05.2024')
+    parser.add_argument('-s', '--use-spotify-art', dest='spotify_cover',
+                        help='Fetch album art from Spotify instead of embedded art', required=False, default=False)
 
     return parser.parse_args()
 

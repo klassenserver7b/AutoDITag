@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "auto_di_tag"
-version = "0.2.7"
+version = "0.3.0"
 authors = [
   { name="Klassenserver7b", email="klassenserver7bwin10@gmail.com" },
 ]
@@ -20,7 +20,7 @@ classifiers = [
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
-dependencies = ["mutagen>=1.45", "argparse>=1.4"]
+dependencies = ["mutagen>=1.40", "argparse>=1.0", "spotipy>=2.25", "requests >= 2.0"]
 
 [project.scripts]
 auto_di_tag = "auto_di_tag:main"
