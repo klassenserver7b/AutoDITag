@@ -44,6 +44,9 @@ jobs:
 
   linux-packages:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        packager: [deb, rpm, archlinux]
 
     steps:
       - name: Checkout sources
@@ -64,11 +67,6 @@ jobs:
       - name: Build standalone binary with PyInstaller
         run: pyinstaller --onefile --name autoditag auto_di_tag.py
 
-      - name: Install nFPM
-        uses: goreleaser/nfpm-action@v6
-        with:
-          version: latest
-
       - name: Determine version & build Linux packages
         run: |
           VERSION="0.0.0-dev"
@@ -79,13 +77,18 @@ jobs:
           fi
           export VERSION
           export ARCH="amd64"
-
           mkdir -p packages
-          nfpm package --config nfpm.yaml --packager deb --target packages/
-          nfpm package --config nfpm.yaml --packager rpm --target packages/
-          nfpm package --config nfpm.yaml --packager archlinux --target packages/
         env:
           GITHUB_EVENT_RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
+
+      - name: Create ${{ matrix.packager }} package
+        id: nfpm
+        uses: burningalchemist/action-gh-nfpm@v1
+        with:
+          nfpm_version: 2.49.0
+          packager: ${{ matrix.packager }}
+          target: packages/
+          config: nfpm.yaml
 
       - name: Upload Linux packages
         uses: actions/upload-artifact@v7
