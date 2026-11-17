@@ -12,6 +12,10 @@ on:
     tags:
     - 'v[0-9]+.[0-9]+.[0-9]+'
 
+env:
+  PYTHON_VERSION: "3.x"
+  NFPM_VERSION: "2.49.0"
+
 permissions:
   contents: write
 
@@ -25,7 +29,7 @@ jobs:
 
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.x"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
       - name: Install dependencies
@@ -44,9 +48,6 @@ jobs:
 
   linux-packages:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        packager: [deb, rpm, archlinux]
 
     steps:
       - name: Checkout sources
@@ -55,7 +56,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.x"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
       - name: Install dependencies & PyInstaller
@@ -81,12 +82,30 @@ jobs:
         env:
           GITHUB_EVENT_RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
 
-      - name: Create ${{ matrix.packager }} package
-        id: nfpm
+      - name: Create deb package
+        id: nfpm-deb
         uses: burningalchemist/action-gh-nfpm@v1
         with:
-          nfpm_version: 2.49.0
-          packager: ${{ matrix.packager }}
+          nfpm_version: ${{ env.NFPM_VERSION }}
+          packager: deb
+          target: packages/
+          config: nfpm.yaml
+
+      - name: Create rpm package
+        id: nfpm-rpm
+        uses: burningalchemist/action-gh-nfpm@v1
+        with:
+          nfpm_version: ${{ env.NFPM_VERSION }}
+          packager: rpm
+          target: packages/
+          config: nfpm.yaml
+
+      - name: Create archlinux package
+        id: nfpm-arch
+        uses: burningalchemist/action-gh-nfpm@v1
+        with:
+          nfpm_version: ${{ env.NFPM_VERSION }}
+          packager: archlinux
           target: packages/
           config: nfpm.yaml
 
@@ -95,6 +114,7 @@ jobs:
         with:
           name: linux-packages
           path: packages/
+
 
   # 3. Windows standalone executable (PyInstaller)
   windows-build:
@@ -107,7 +127,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.x"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
       - name: Install dependencies & PyInstaller
