@@ -1,0 +1,41 @@
+# nfpm.yaml
+# Build Linux packages (.deb, .rpm, .pkg.tar.zst) from your PyInstaller binary.
+# Windows (.exe) is built directly by PyInstaller and distributed standalone.
+
+name: "autoditag"
+arch: "${ARCH}" # e.g., amd64 or arm64 (pass via environment variable)
+platform: "linux"
+version: "${VERSION}" # e.g., 1.0.0 (pass via environment variable)
+section: "sound"
+priority: "optional"
+maintainer: "klassenserver7b <klassenserver7bwin10@gmail.com>"
+description: "Automatically rename and tag your dance playlist"
+homepage: "https://github.com/klassenserver7b/AutoDITag"
+license: "MIT"
+
+contents:
+  # Install the standalone PyInstaller binary into /usr/bin
+  - src: ./dist/autoditag
+    dst: /usr/bin/autoditag
+    file_info:
+      mode: 0755
+
+  # Include README and LICENSE
+  - src: ./LICENSE
+    dst: /usr/share/licenses/autoditag/LICENSE
+  - src: ./README.md
+    dst: /usr/share/doc/autoditag/README.md
+
+overrides:
+  deb:
+    depends:
+      - libc6
+      - zlib1g
+  rpm:
+    depends:
+      - glibc
+      - zlib
+  archlinux:
+    depends:
+      - glibc
+      - zlib
